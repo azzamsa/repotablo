@@ -56,7 +56,7 @@ pub async fn app() -> Result<Router, Error> {
         paths(
             health::resolver::health,
         ),
-        components(schemas(health::model::HealthPayload, health::model::HealthResponse)),
+        components(schemas(health::model::Health, health::model::HealthResponse)),
         tags(
             (name = "Repotablo", description = "Tabulate Github Repositories")
         )

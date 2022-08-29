@@ -6,11 +6,11 @@ use crate::health::entities;
 
 // Used in conjuction with JSON response
 #[derive(Debug, SimpleObject, Serialize, ToSchema)]
-pub struct HealthPayload {
+pub struct Health {
     pub status: String,
 }
 
-impl From<entities::Health> for HealthPayload {
+impl From<entities::Health> for Health {
     fn from(health: entities::Health) -> Self {
         Self {
             status: health.status,
@@ -20,5 +20,5 @@ impl From<entities::Health> for HealthPayload {
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct HealthResponse {
-    pub data: HealthPayload,
+    pub data: Health,
 }
