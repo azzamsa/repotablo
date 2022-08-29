@@ -9,12 +9,8 @@ impl Service {
 
         let parser = CmarkParser::new_ext(&content, Options::all());
         for event in parser {
-            match &event {
-                Event::Start(tag) => match tag {
-                    Tag::Link(_, url, _) => links.push(format!("{}", url)),
-                    _ => (),
-                },
-                _ => (),
+            if let Event::Start(Tag::Link(_, url, _)) = &event {
+                links.push(format!("{}", url))
             };
         }
         Ok(Parser { links })
