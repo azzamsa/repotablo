@@ -1,19 +1,24 @@
-use pulldown_cmark::{Event, Options, Parser, Tag};
+use std::{
+    net::{IpAddr, SocketAddr},
+    sync::Arc,
+};
 
-fn main() {
-    let markdown_input = concat!("# My Heading\n", "[My Link](http://example.com)\n", "\n",);
-    let mut links: Vec<String> = Vec::new();
+use axum::Server;
+use backend::{config::Config, logger, routes::app, Error};
 
-    let parser = Parser::new_ext(markdown_input, Options::all());
-    for event in parser {
-        match &event {
-            Event::Start(tag) => match tag {
-                Tag::Link(_, url, _) => links.push(format!("{}", url)),
-                _ => (),
-            },
-            _ => (),
-        };
-    }
+#[tokio::main]
+async fn main() -> Result<(), Error> {
+    let config = Arc::new(Config::load()?);
+    logger::init(&config);
 
-    println!("{:?}", links);
+    let app = app().await?;
+
+    let host: IpAddr = config.base_url.parse()?;
+    let port = config.http.port;
+    let address = &SocketAddr::new(host, port);
+
+    log::info!("App started at `{}`", address);
+    Server::bind(address).serve(app.into_make_service()).await?;
+
+    Ok(())
 }
