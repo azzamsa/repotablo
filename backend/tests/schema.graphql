@@ -1,0 +1,27 @@
+
+
+type HealthPayload {
+	status: String!
+}
+
+
+
+type Meta {
+	build: String!
+	version: String!
+}
+
+type ParserPayload {
+	links: [String!]!
+}
+
+type Query {
+	meta: Meta!
+	health: HealthPayload!
+	parse(content: String!): ParserPayload!
+}
+
+
+schema {
+	query: Query
+}
