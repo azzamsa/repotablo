@@ -1,4 +1,4 @@
-use std::{fmt, str::FromStr};
+use std::{fmt, path::Path, str::FromStr};
 
 use dotenv;
 use serde::{Deserialize, Serialize};
@@ -102,7 +102,20 @@ impl Config {
             http,
         };
 
+        config.validate()?;
         Ok(config)
+    }
+    fn validate(&self) -> Result<(), Error> {
+        //  Grahpql
+        let path = Path::new(&self.schema_location);
+        if !path.exists() {
+            return Err(Error::InvalidArgument(format!(
+                "config: GraphQL schema location doesn't exists '{}'",
+                &self.schema_location
+            )));
+        }
+
+        Ok(())
     }
 }
 
