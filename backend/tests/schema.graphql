@@ -1,6 +1,6 @@
 
 
-type HealthPayload {
+type Health {
 	status: String!
 }
 
@@ -11,14 +11,14 @@ type Meta {
 	version: String!
 }
 
-type ParserPayload {
+type Parser {
 	links: [String!]!
 }
 
 type Query {
 	meta: Meta!
-	health: HealthPayload!
-	parse(content: String!): ParserPayload!
+	health: Health!
+	parse(content: String!): Parser!
 }
 
 

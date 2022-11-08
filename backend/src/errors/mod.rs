@@ -1,4 +1,4 @@
-pub mod core;
+pub mod app;
 
 use thiserror::Error;
 
@@ -14,12 +14,6 @@ pub enum Error {
     InvalidArgument(String),
 }
 
-impl std::convert::From<axum::Error> for Error {
-    fn from(err: axum::Error) -> Self {
-        Error::Internal(err.to_string())
-    }
-}
-
 impl std::convert::From<std::env::VarError> for Error {
     fn from(err: std::env::VarError) -> Self {
         match err {
@@ -29,21 +23,9 @@ impl std::convert::From<std::env::VarError> for Error {
     }
 }
 
-impl std::convert::From<std::num::ParseIntError> for Error {
-    fn from(err: std::num::ParseIntError) -> Self {
-        Error::InvalidArgument(err.to_string())
-    }
-}
-
 impl std::convert::From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Self {
         Error::Internal(err.to_string())
-    }
-}
-
-impl std::convert::From<async_graphql::Error> for Error {
-    fn from(err: async_graphql::Error) -> Self {
-        Error::Internal(err.message)
     }
 }
 
@@ -56,5 +38,23 @@ impl std::convert::From<std::net::AddrParseError> for Error {
 impl std::convert::From<hyper::Error> for Error {
     fn from(err: hyper::Error) -> Self {
         Error::Internal(err.to_string())
+    }
+}
+
+impl std::convert::From<tracing_subscriber::filter::ParseError> for Error {
+    fn from(err: tracing_subscriber::filter::ParseError) -> Self {
+        Error::Internal(err.to_string())
+    }
+}
+
+impl std::convert::From<tracing_subscriber::filter::FromEnvError> for Error {
+    fn from(err: tracing_subscriber::filter::FromEnvError) -> Self {
+        Error::Internal(err.to_string())
+    }
+}
+
+impl std::convert::From<std::num::ParseIntError> for Error {
+    fn from(err: std::num::ParseIntError) -> Self {
+        Error::InvalidArgument(err.to_string())
     }
 }

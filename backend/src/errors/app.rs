@@ -14,11 +14,3 @@ impl std::convert::From<Error> for crate::Error {
         }
     }
 }
-
-impl std::convert::From<async_graphql::Error> for Error {
-    fn from(err: async_graphql::Error) -> Self {
-        match err {
-            _ => Error::Internal,
-        }
-    }
-}
