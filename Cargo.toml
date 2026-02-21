@@ -1,7 +1,14 @@
 [package]
 name = "repotablo"
 version = "0.0.1"
+authors = ["azzamsa <me@azzamsa.com>"]
+categories = ["command-line-utilities"]
 edition = "2024"
+keywords = ["stargazers", "github"]
+license = "GPL-3.0-only"
+readme = "README.md"
+repository = "https://github.com/azzamsa/repotablo"
+description = "Rank repositories, fast!"
 
 [dependencies]
 anyhow = "1.0.102"

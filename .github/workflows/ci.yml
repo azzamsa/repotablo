@@ -1,0 +1,106 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  code_quality:
+    name: Code quality
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: actions-rust-lang/setup-rust-toolchain@1780873c7b576612439a134613cc4cc74ce5538c # v1.15.2
+        with:
+          components: clippy, rustfmt
+
+      - uses: taiki-e/install-action@470679bc3a1580072dac4e67535d1aa3a3dcdf51 # v2.68.6
+        with:
+          tool: just,dprint,typos,hurlfmt
+
+      - name: Show version information
+        shell: bash
+        run: |
+          rustc --version
+          cargo --version
+          cargo fmt --version
+
+      - name: Ensure `fmt` has been run
+        run: just fmt-check
+
+      - name: Run clippy
+        run: just lint
+
+  msrv:
+    name: Minimum supported rust version
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: actions-rust-lang/setup-rust-toolchain@1780873c7b576612439a134613cc4cc74ce5538c # v1.15.2
+
+      - uses: taiki-e/install-action@470679bc3a1580072dac4e67535d1aa3a3dcdf51 # v2.68.6
+        with:
+          tool: just
+
+      - name: Prepare the environment variables
+        run: cp .sample.env .env
+
+      - name: Show version information
+        shell: bash
+        run: |
+          rustc --version
+          cargo --version
+
+      - name: Run tests
+        env:
+          SQLX_OFFLINE: true
+        run: just test
+
+  build:
+    name: Build for ${{ matrix.build }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {
+              build: linux-gnu,
+              os: ubuntu-24.04,
+              target: x86_64-unknown-linux-gnu,
+            }
+          - {
+              build: linux-musl,
+              os: ubuntu-22.04,
+              target: x86_64-unknown-linux-musl,
+            }
+          - { build: win-gnu, os: windows-2025, target: x86_64-pc-windows-gnu }
+          - {
+              build: win-msvc,
+              os: windows-2025,
+              target: x86_64-pc-windows-msvc,
+            }
+          - {
+              build: win32-msvc,
+              os: windows-2025,
+              target: i686-pc-windows-msvc,
+            }
+          - { build: macos, os: macos-15, target: x86_64-apple-darwin }
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: actions-rust-lang/setup-rust-toolchain@1780873c7b576612439a134613cc4cc74ce5538c # v1.15.2
+        with:
+          target: ${{ matrix.target }}
+
+      - name: Show version information
+        shell: bash
+        run: |
+          rustc --version
+          cargo --version
+
+      - name: Build
+        run: cargo build --release --locked --target ${{ matrix.target }}
