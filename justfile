@@ -1,29 +1,93 @@
 #!/usr/bin/env -S just --justfile
 
-# List available commands.
+set dotenv-load := true
+
+alias d := dev
+alias r := run
+alias f := fmt
+alias l := lint
+alias t := test
+alias c := comply
+alias k := check
+
+[doc('List available commands')]
 _default:
     just --list --unsorted
 
-# Setup the repository
+[confirm('⚠️ This command will alter your system. Run recipe `setup`?')]
+[doc('Setup the repository')]
 setup:
-    git cliff --version || cargo install git-cliff
-    dprint --version || cargo install dprint
+    cargo binstall 'cargo-edit cargo-outdated dprint git-cliff bacon typos-cli'
 
-# Format the codebase.
+[doc('Tasks to make the code-base comply with the rules. Mostly used in git hooks')]
+comply: _doc-check fmt lint test
+
+[doc('Check if the repository comply with the rules and ready to be pushed')]
+check: _doc-check fmt-check lint test
+
+[doc('Develop the app')]
+dev:
+    bacon
+    just comply
+
+[doc('Run the app')]
+run:
+    cargo run
+    
+[doc('Build the app')]
+build:
+    cargo build --release
+
+[doc('Format the codebase.')]
 fmt:
-    dprint fmt --config configs/dprint.json
+    cargo fmt --all
+    dprint fmt
 
-# Check is the codebase properly formatted.
+[doc('Check is the codebase properly formatted')]
 fmt-check:
-    dprint check --config configs/dprint.json
+    cargo fmt --all -- --check
+    dprint check
 
-# Tasks to make the code-base comply with the rules. Mostly used in git hooks.
-comply: fmt
+[doc('Lint the codebase')]
+lint:
+    cargo clippy --all-targets --all-features
+    typos
 
-# Check if the repository comply with the rules and ready to be pushed.
-check: fmt-check
+[doc('Test the codebase')]
+test:
+    cargo test
 
-# Create a new release. Example `just release v2.2.0`
-release version:
-    bash scripts/release.sh {{ version }}
+[doc('Create a new release. Example `cargo-release release minor --tag-name v0.2.0`')]
+release level:
+    cargo-release release {{ level }} --execute
 
+[doc('Make sure the repo is ready for release')]
+release-check level: check
+    just up
+    cargo-release release {{ level }}
+
+[doc('Check the documentation')]
+_doc-check:
+    cargo doc --all-features --no-deps
+
+[doc('Prepare release hooks')]
+_release-prepare version:
+    git-cliff --config .cliff.toml --output CHANGELOG.md --tag {{ version }}
+    just fmt
+
+[doc('Check dependencies health. Pass `--write` to upgrade dependencies')]
+up arg="":
+    if [ "{{ arg }}" = "--write" ]; then \
+        cargo upgrade --incompatible --recursive --verbose && \
+        cargo update && \
+        dprint config update; \
+    else \
+        cargo outdated --root-deps-only; \
+    fi
+
+[doc('Dependency analysis')]
+meta:
+    cargo +nightly udeps
+    cargo audit
+    pnpx actions-up
+    actionlint

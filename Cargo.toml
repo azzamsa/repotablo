@@ -1,0 +1,16 @@
+[package]
+name = "repotablo"
+version = "0.0.1"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.102"
+iocraft = "0.7.18"
+smol = "2.0.2"
+
+[package.metadata.release]
+sign-commit = true
+sign-tag = true
+tag-message = "v{{version}}"
+pre-release-commit-message = "v{{version}}"
+pre-release-hook = ["just", "_release-prepare", "{{version}}"]
