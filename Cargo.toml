@@ -13,10 +13,17 @@ description = "Rank repositories, fast!"
 [dependencies]
 color-eyre = "0.6.5"
 crossterm = "0.29.0"
-fakeit = "1.4.1"
 itertools = "0.14.0"
 ratatui = "0.30.0"
 unicode-width = "0.2.2"
+
+chrono = "0.4.43"
+chrono-humanize = "0.2.3"
+futures = "0.3"
+octocrab = "0.41"
+serde = { version = "1.0.228", features = ["derive"] }
+thiserror = "2.0.18"
+tokio = { version = "1", features = ["full"] }
 
 [package.metadata.release]
 sign-commit = true

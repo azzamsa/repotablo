@@ -1,9 +1,19 @@
 use color_eyre::Result;
 
-use repotablo::{repo::generate_fake_names, ui::App};
+use repotablo::{stats::ReposStats, ui::App};
 
-fn main() -> Result<()> {
+async fn run() -> Result<()> {
+    let repos = vec![("DioxusLabs", "dioxus"), ("emilk", "egui")];
+    let stats = ReposStats::fetch(repos).await?;
+
+    ratatui::run(|terminal| App::new(stats).run(terminal))?;
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -> Result<()> {
     color_eyre::install()?;
-    let repos = generate_fake_names();
-    ratatui::run(|terminal| App::new(repos).run(terminal))
+    run().await?;
+
+    Ok(())
 }

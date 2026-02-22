@@ -1,10 +1,5 @@
-// pub mod cli;
-// pub mod config;
-// pub mod error;
-// pub mod output;
-// pub mod prayer;
-
-pub mod repo;
+pub mod error;
+pub mod stats;
 pub mod ui;
 
-// pub use error::Error;
+pub use error::Error;

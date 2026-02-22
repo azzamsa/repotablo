@@ -9,14 +9,11 @@ use ratatui::widgets::{
 };
 use ratatui::{DefaultTerminal, Frame};
 use style::palette::tailwind;
-use unicode_width::UnicodeWidthStr;
 
-use crate::repo::Repo;
+use crate::stats::{RepoStats, ReposStats};
 
-const INFO_TEXT: [&str; 2] = [
-    "(1) by name  | (2) by stars",
-    "(Esc) quit | (↑) move up | (↓) move down",
-];
+const INFO_TEXT: &str = "Sort by: (1) name | (2) stars | (3) forks | (4) created | (5) updated";
+
 const ITEM_HEIGHT: usize = 1;
 
 struct TableColors {
@@ -42,47 +39,40 @@ impl TableColors {
 #[derive(Clone, Copy)]
 enum SortBy {
     Name,
-    Email,
+    Stars,
+    Forks,
+    Created,
+    Updated,
 }
 
 pub struct App {
     state: TableState,
-    items: Vec<Repo>,
+    items: Vec<RepoStats>,
     sort_by: SortBy,
-    longest_item_lens: (u16, u16), // order is (name, email)
     scroll_state: ScrollbarState,
     colors: TableColors,
 }
 
-// impl Default for App {
-//     fn default() -> Self {
-//         Self::new(Vec::new())
-//     }
-// }
-
 impl App {
-    pub fn new(data: Vec<Repo>) -> Self {
+    pub fn new(stats: ReposStats) -> Self {
+        let items = stats.repos;
         Self {
             state: TableState::default().with_selected(0),
             sort_by: SortBy::Name,
-            longest_item_lens: constraint_len_calculator(&data),
-            scroll_state: ScrollbarState::new((data.len() - 1) * ITEM_HEIGHT),
+            scroll_state: ScrollbarState::new((items.len() - 1) * ITEM_HEIGHT),
             colors: TableColors::new(),
-            items: data,
+            items,
         }
     }
 
     fn sort(&mut self) {
         match self.sort_by {
-            SortBy::Name => {
-                self.items.sort_by(|a, b| a.name.cmp(&b.name));
-            }
-            SortBy::Email => {
-                self.items.sort_by(|a, b| a.stars.cmp(&b.stars));
-            }
+            SortBy::Name => self.items.sort_by(|a, b| a.name.cmp(&b.name)),
+            SortBy::Stars => self.items.sort_by(|a, b| b.stars.cmp(&a.stars)),
+            SortBy::Forks => self.items.sort_by(|a, b| b.forks.cmp(&a.forks)),
+            SortBy::Created => self.items.sort_by(|a, b| b.created_at.cmp(&a.created_at)), // oldest first
+            SortBy::Updated => self.items.sort_by(|a, b| b.pushed_at.cmp(&a.pushed_at)), // most recent first
         }
-
-        // reset selection
         self.state.select(Some(0));
         self.scroll_state = self.scroll_state.position(0);
     }
@@ -131,9 +121,20 @@ impl App {
                         self.sort_by = SortBy::Name;
                         self.sort();
                     }
-
                     KeyCode::Char('2') => {
-                        self.sort_by = SortBy::Email;
+                        self.sort_by = SortBy::Stars;
+                        self.sort();
+                    }
+                    KeyCode::Char('3') => {
+                        self.sort_by = SortBy::Forks;
+                        self.sort();
+                    }
+                    KeyCode::Char('4') => {
+                        self.sort_by = SortBy::Created;
+                        self.sort();
+                    }
+                    KeyCode::Char('5') => {
+                        self.sort_by = SortBy::Updated;
                         self.sort();
                     }
                     _ => {}
@@ -143,7 +144,7 @@ impl App {
     }
 
     fn render(&mut self, frame: &mut Frame) {
-        let layout = Layout::vertical([Constraint::Min(5), Constraint::Length(4)]);
+        let layout = Layout::vertical([Constraint::Min(5), Constraint::Length(3)]);
         let rects = frame.area().layout_vec(&layout);
 
         self.render_table(frame, rects[0]);
@@ -157,7 +158,7 @@ impl App {
             .bg(self.colors.selected_row_style_fg)
             .fg(self.colors.row_fg);
 
-        let header = ["Name", "Email"]
+        let header = ["Name", "Stars", "Forks", "License", "Age", "Updated"]
             .into_iter()
             .map(Cell::from)
             .collect::<Row>()
@@ -175,21 +176,22 @@ impl App {
                 .style(Style::new().fg(self.colors.row_fg).bg(color))
                 .height(1)
         });
-        let t = Table::new(
+        let table = Table::new(
             rows,
             [
-                // + 1 is for padding.
-                Constraint::Length(self.longest_item_lens.0 + 2),
-                Constraint::Min(self.longest_item_lens.1),
+                Constraint::Length(15), // Name
+                Constraint::Length(8),  // Stars
+                Constraint::Length(8),  // Forks
+                Constraint::Length(15), // License
+                Constraint::Length(15), // Age
+                Constraint::Min(15),    // Updated
             ],
         )
         .header(header)
         .highlight_symbol("  ")
         .highlight_spacing(HighlightSpacing::Always)
         .row_highlight_style(selected_row_style);
-        // .block(Block::default().padding(ratatui::widgets::Padding::left(1)));
-
-        frame.render_stateful_widget(t, area, &mut self.state);
+        frame.render_stateful_widget(table, area, &mut self.state);
     }
 
     fn render_scrollbar(&mut self, frame: &mut Frame, area: Rect) {
@@ -208,7 +210,7 @@ impl App {
     }
 
     fn render_footer(&self, frame: &mut Frame, area: Rect) {
-        let info_footer = Paragraph::new(Text::from_iter(INFO_TEXT))
+        let info_footer = Paragraph::new(Text::from(INFO_TEXT))
             .style(Style::new().fg(self.colors.row_fg))
             .centered()
             .block(
@@ -218,22 +220,4 @@ impl App {
             );
         frame.render_widget(info_footer, area);
     }
-}
-
-fn constraint_len_calculator(items: &[Repo]) -> (u16, u16) {
-    let name_len = items
-        .iter()
-        .map(Repo::name)
-        .map(UnicodeWidthStr::width)
-        .max()
-        .unwrap_or(0);
-    let stars_len = items
-        .iter()
-        .map(Repo::stars)
-        .map(UnicodeWidthStr::width)
-        .max()
-        .unwrap_or(0);
-
-    #[expect(clippy::cast_possible_truncation)]
-    (name_len as u16, stars_len as u16)
 }
