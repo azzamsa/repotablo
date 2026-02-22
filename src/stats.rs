@@ -23,6 +23,7 @@ impl ReposStats {
 }
 
 pub struct RepoStats {
+    pub owner: String,
     pub name: String,
     pub stars: u32,
     pub forks: u32,
@@ -62,6 +63,7 @@ impl RepoStats {
         let last_push = info.pushed_at.unwrap();
 
         Ok(RepoStats {
+            owner: owner.to_string(),
             name: name.to_string(),
             stars,
             forks,

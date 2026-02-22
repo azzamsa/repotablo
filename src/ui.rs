@@ -13,7 +13,10 @@ use style::palette::tailwind;
 use crate::Error;
 use crate::stats::{RepoStats, ReposStats};
 
-const INFO_TEXT: &str = "Sort by: (1) Name | (2) Stars | (3) Forks | (4) Age | (5) Updated";
+const INFO_TEXT: [&str; 2] = [
+    "Sort by: (1) Name | (2) Stars | (3) Forks | (4) Age | (5) Updated",
+    "(O) Open | (Esc) quit | (↑/j) move up | (↓/k) move down",
+];
 
 const ITEM_HEIGHT: usize = 1;
 
@@ -142,6 +145,13 @@ impl App {
                     KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
                     KeyCode::Char('j') | KeyCode::Down => self.next_row(),
                     KeyCode::Char('k') | KeyCode::Up => self.previous_row(),
+                    KeyCode::Char('o') => {
+                        if let Some(i) = self.state.selected() {
+                            let item = &self.items[i];
+                            let url = format!("https://github.com/{}/{}", item.owner, item.name);
+                            let _ = open::that(url);
+                        }
+                    }
 
                     KeyCode::Char('1') => {
                         self.sort_by = SortBy::Name;
@@ -170,7 +180,7 @@ impl App {
     }
 
     fn render(&mut self, frame: &mut Frame) {
-        let layout = Layout::vertical([Constraint::Min(5), Constraint::Length(3)]);
+        let layout = Layout::vertical([Constraint::Min(5), Constraint::Length(4)]);
         let rects = frame.area().layout_vec(&layout);
 
         self.render_table(frame, rects[0]);
@@ -246,7 +256,7 @@ impl App {
     }
 
     fn render_footer(&self, frame: &mut Frame, area: Rect) {
-        let info_footer = Paragraph::new(Text::from(INFO_TEXT))
+        let info_footer = Paragraph::new(Text::from_iter(INFO_TEXT))
             .style(Style::new().fg(self.colors.row_fg))
             .centered()
             .block(
