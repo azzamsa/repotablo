@@ -14,11 +14,14 @@ impl Stats {
         oct: &Octocrab,
         repos: Vec<(String, String)>,
         progress: mpsc::Sender<(usize, usize)>,
+        min_stars: Option<u32>,
     ) -> Result<Stats, Error> {
         let total = repos.len();
         let mut results = Vec::new();
         for (i, (owner, repo)) in repos.iter().enumerate() {
-            if let Some(stat) = Repo::fetch(oct, owner, repo).await? {
+            if let Some(stat) = Repo::fetch(oct, owner, repo).await?
+                && min_stars.is_none_or(|min| stat.stars >= min)
+            {
                 results.push(stat);
             }
             let _ = progress.send((i + 1, total)).await;
@@ -43,8 +46,8 @@ impl Repo {
     pub fn ref_array(&self) -> [String; 6] {
         [
             self.name.clone(),                            // Name
-            prettify_num(self.stars),                     // Stars
-            prettify_num(self.forks),                     // Forks
+            Self::prettify_num(self.stars),               // Stars
+            Self::prettify_num(self.forks),               // Forks
             self.license.clone(),                         // License
             HumanTime::from(self.created_at).to_string(), // Age
             HumanTime::from(self.pushed_at).to_string(),  // Updated
@@ -82,14 +85,14 @@ impl Repo {
             pushed_at: last_push,
         }))
     }
-}
 
-fn prettify_num(stars: u32) -> String {
-    if stars >= 1_000_000 {
-        format!("{:.1}M", stars as f32 / 1_000_000.0)
-    } else if stars >= 1_000 {
-        format!("{:.1}k", stars as f32 / 1_000.0)
-    } else {
-        stars.to_string()
+    fn prettify_num(stars: u32) -> String {
+        if stars >= 1_000_000 {
+            format!("{:.1}M", stars as f32 / 1_000_000.0)
+        } else if stars >= 1_000 {
+            format!("{:.1}k", stars as f32 / 1_000.0)
+        } else {
+            stars.to_string()
+        }
     }
 }

@@ -12,6 +12,10 @@ pub struct Opts {
     /// URL or local file path (opens $EDITOR if not provided)
     pub input: Option<String>,
 
+    /// Skip repos with fewer than n stars
+    #[arg(long)]
+    pub min_stars: Option<u32>,
+
     /// GitHub token to avoid rate limiting
     #[clap(long, env)]
     pub github_token: Option<String>,

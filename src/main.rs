@@ -27,7 +27,7 @@ async fn run() -> Result<(), Error> {
 
         let fetch_task = tokio::spawn({
             let repos = repos.clone();
-            async move { Stats::fetch(&oct, repos, tx).await }
+            async move { Stats::fetch(&oct, repos, tx, opts.min_stars).await }
         });
 
         while let Some((current, total)) = rx.recv().await {
