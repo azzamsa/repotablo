@@ -100,6 +100,25 @@ impl App {
         self.scroll_state = self.scroll_state.position(i * ITEM_HEIGHT);
     }
 
+    fn export_markdown(&self) {
+        let mut md = String::new();
+
+        // header
+        md.push_str("| Name | Stars | Forks | License | Age | Updated |\n");
+        md.push_str("|------|-------|-------|---------|-----|---------|\n");
+
+        // use filtered so what you see is what you export
+        for &idx in &self.filtered {
+            let r = &self.items[idx];
+            let row = r.ref_array();
+            md.push_str(&format!(
+                "| {} | {} | {} | {} | {} | {} |\n",
+                row[0], row[1], row[2], row[3], row[4], row[5]
+            ));
+        }
+        let _ = std::fs::write("output.md", md);
+    }
+
     fn apply_filter(&mut self) {
         let query = self.filter.as_deref().unwrap_or("").to_lowercase();
         self.filtered = self

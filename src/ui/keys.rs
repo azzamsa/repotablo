@@ -22,6 +22,9 @@ impl App {
                         }
                     }
                 }
+                KeyCode::Char('e') => {
+                    self.export_markdown();
+                }
                 KeyCode::Char('/') => {
                     self.filtering = true;
                     self.filter = Some(String::new());
@@ -74,6 +77,6 @@ impl App {
                 _ => {}
             }
         }
-        Ok(false) // continue
+        Ok(false)
     }
 }

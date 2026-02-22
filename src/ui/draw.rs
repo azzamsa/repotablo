@@ -13,7 +13,7 @@ use crate::ui::App;
 
 const INFO_TEXT: [&str; 2] = [
     "Sort by: (1) Name | (2) Stars | (3) Forks | (4) Age | (5) Updated",
-    "(O) Open | (Y) Copy | (?) Help",
+    "(o) Open | (y) Copy | (?) Help",
 ];
 
 impl App {
@@ -131,6 +131,7 @@ impl App {
             "  1-5    Sort by column",
             "  /      Filter repos",
             "  o      Open in browser",
+            "  e      Export to markdown",
             "  y      Yank URL to clipboard",
             "  j/↓    Move down",
             "  k/↑    Move up",
