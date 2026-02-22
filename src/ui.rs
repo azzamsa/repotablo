@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use crossterm::event::{self, KeyCode};
 use ratatui::layout::{Constraint, Layout, Margin, Rect};
 use ratatui::style::{self, Color, Style};
@@ -27,6 +28,7 @@ struct TableColors {
 impl TableColors {
     const fn new() -> Self {
         Self {
+            // https://docs.rs/ratatui/latest/ratatui/prelude/style/palette/tailwind/index.html
             row_fg: tailwind::WHITE,
             selected_row_style_fg: tailwind::VIOLET.c900,
             normal_row_color: tailwind::SLATE.c950,
@@ -107,6 +109,27 @@ impl App {
         self.scroll_state = self.scroll_state.position(i * ITEM_HEIGHT);
     }
 
+    fn popularity_color(stars: u32) -> Color {
+        if stars >= 10_000 {
+            tailwind::LIME.c500 // very popular
+        } else if stars >= 1_000 {
+            tailwind::YELLOW.c500 // gaining traction
+        } else {
+            tailwind::WHITE // normal
+        }
+    }
+
+    fn abandoned_color(pushed_at: DateTime<Utc>) -> Color {
+        let days = (Utc::now() - pushed_at).num_days();
+        if days >= (365 * 2) {
+            tailwind::ORANGE.c600
+        } else if days >= 365 {
+            tailwind::YELLOW.c500
+        } else {
+            tailwind::WHITE
+        }
+    }
+
     pub fn run(mut self, terminal: &mut DefaultTerminal) -> Result<(), Error> {
         terminal
             .draw(|f| f.render_widget(Paragraph::new("Fetching stats...").centered(), f.area()))?;
@@ -173,9 +196,19 @@ impl App {
                 _ => self.colors.alt_row_color,
             };
             let item = data.ref_array();
-            item.into_iter()
-                .map(|content| Cell::from(Text::from(content.to_string())))
-                .collect::<Row>()
+            let cells = item.into_iter().enumerate().map(|(j, content)| {
+                let cell = Cell::from(Text::from(content.to_string()));
+                match j {
+                    // stars
+                    1 => cell.style(Style::new().fg(Self::popularity_color(data.stars))),
+                    // fork
+                    2 => cell.style(Style::new().fg(Self::popularity_color(data.stars))),
+                    // Age
+                    5 => cell.style(Style::new().fg(Self::abandoned_color(data.pushed_at))),
+                    _ => cell,
+                }
+            });
+            Row::new(cells)
                 .style(Style::new().fg(self.colors.row_fg).bg(color))
                 .height(1)
         });
