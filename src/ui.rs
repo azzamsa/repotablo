@@ -4,8 +4,8 @@ use ratatui::layout::{Constraint, Layout, Margin, Rect};
 use ratatui::style::{self, Color, Style};
 use ratatui::text::Text;
 use ratatui::widgets::{
-    Block, BorderType, Cell, HighlightSpacing, Paragraph, Row, Scrollbar, ScrollbarOrientation,
-    ScrollbarState, Table, TableState,
+    Block, BorderType, Cell, Clear, HighlightSpacing, Paragraph, Row, Scrollbar,
+    ScrollbarOrientation, ScrollbarState, Table, TableState,
 };
 use ratatui::{DefaultTerminal, Frame};
 use style::palette::tailwind;
@@ -15,7 +15,7 @@ use crate::stats::{RepoStats, ReposStats};
 
 const INFO_TEXT: [&str; 2] = [
     "Sort by: (1) Name | (2) Stars | (3) Forks | (4) Age | (5) Updated",
-    "(O) Open | (Y) Copy | (Esc) quit | (↑/j) move up | (↓/k) move down",
+    "(O) Open | (Y) Copy | (?) Help",
 ];
 
 const ITEM_HEIGHT: usize = 1;
@@ -63,6 +63,8 @@ pub struct App {
     // clipboard
     // Otherwise "clipboard was dropped very quickly"
     clipboard: Option<arboard::Clipboard>,
+    // help
+    show_help: bool,
 }
 
 impl App {
@@ -79,6 +81,7 @@ impl App {
             filter: None,
             filtering: false,
             clipboard: arboard::Clipboard::new().ok(),
+            show_help: false,
         }
     }
 
@@ -233,6 +236,9 @@ impl App {
                         self.sort_by = SortBy::Updated;
                         self.sort();
                     }
+                    KeyCode::Char('?') => {
+                        self.show_help = !self.show_help;
+                    }
                     _ => {}
                 }
             }
@@ -246,6 +252,10 @@ impl App {
         self.render_table(frame, rects[0]);
         self.render_scrollbar(frame, rects[0]);
         self.render_footer(frame, rects[1]);
+
+        if self.show_help {
+            self.render_help(frame);
+        }
     }
 
     fn render_table(&mut self, frame: &mut Frame, area: Rect) {
@@ -331,5 +341,41 @@ impl App {
                     .border_style(Style::new().fg(self.colors.footer_border_color)),
             );
         frame.render_widget(info_footer, area);
+    }
+
+    fn render_help(&self, frame: &mut Frame) {
+        let area = frame.area();
+
+        // centered popup
+        let popup = Rect {
+            x: area.width / 4,
+            y: area.height / 4,
+            width: area.width / 2,
+            height: area.height / 2,
+        };
+
+        let text = vec![
+            "  Keybindings",
+            "  ──────────────────────────",
+            "  1-5    Sort by column",
+            "  /      Filter repos",
+            "  o      Open in browser",
+            "  y      Yank URL to clipboard",
+            "  j/↓    Move down",
+            "  k/↑    Move up",
+            "  ?      Toggle this help",
+            "  q/Esc  Quit",
+        ]
+        .join("\n");
+
+        let block = Paragraph::new(text).block(
+            Block::bordered()
+                .title(" Help ")
+                .border_type(BorderType::Rounded)
+                .border_style(Style::new().fg(tailwind::VIOLET.c400)),
+        );
+
+        frame.render_widget(Clear, popup); // clears background behind popup
+        frame.render_widget(block, popup);
     }
 }
