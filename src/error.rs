@@ -24,3 +24,15 @@ impl std::convert::From<std::io::Error> for Error {
         Error::Internal(err.to_string())
     }
 }
+
+impl std::convert::From<regex::Error> for Error {
+    fn from(err: regex::Error) -> Self {
+        Error::Internal(err.to_string())
+    }
+}
+
+// impl std::convert::From<tempfile::Error> for Error {
+//     fn from(err: tempfile::Error) -> Self {
+//         Error::Internal(err.to_string())
+//     }
+// }

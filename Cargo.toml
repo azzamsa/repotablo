@@ -11,16 +11,24 @@ repository = "https://github.com/azzamsa/repotablo"
 description = "Rank repositories, fast!"
 
 [dependencies]
-color-eyre = "0.6.5"
+# tui
 crossterm = "0.29.0"
-itertools = "0.14.0"
 ratatui = "0.30.0"
-unicode-width = "0.2.2"
 
+# sdk
+octocrab = "0.49"
+
+# error
+color-eyre = "0.6.5"
+
+# input
+regex = "1"
+tempfile = "3"
+
+# misc
 chrono = "0.4.43"
 chrono-humanize = "0.2.3"
 futures = "0.3"
-octocrab = "0.41"
 serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2.0.18"
 tokio = { version = "1", features = ["full"] }
