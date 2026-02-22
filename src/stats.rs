@@ -18,8 +18,9 @@ impl Stats {
         let total = repos.len();
         let mut results = Vec::new();
         for (i, (owner, repo)) in repos.iter().enumerate() {
-            let stat = Repo::fetch(oct, owner, repo).await?;
-            results.push(stat);
+            if let Some(stat) = Repo::fetch(oct, owner, repo).await? {
+                results.push(stat);
+            }
             let _ = progress.send((i + 1, total)).await;
         }
         Ok(Stats { repos: results })
@@ -50,12 +51,17 @@ impl Repo {
         ]
     }
 
-    pub async fn fetch(oct: &Octocrab, owner: &str, name: &str) -> Result<Repo, Error> {
-        let repo = oct.repos(owner, name);
-        let info = repo.get().await.map_err(|e| match &e {
-            octocrab::Error::GitHub { source, .. } if source.status_code == 403 => Error::RateLimit,
-            _ => Error::GitHub(e),
-        })?;
+    pub async fn fetch(oct: &Octocrab, owner: &str, name: &str) -> Result<Option<Repo>, Error> {
+        let info = match oct.repos(owner, name).get().await {
+            Ok(info) => info,
+            Err(octocrab::Error::GitHub { source, .. }) if source.status_code == 404 => {
+                return Ok(None); // skip silently
+            }
+            Err(octocrab::Error::GitHub { source, .. }) if source.status_code == 403 => {
+                return Err(Error::RateLimit);
+            }
+            Err(e) => return Err(Error::GitHub(e)),
+        };
         let stars = info.stargazers_count.unwrap_or(0);
         let forks = info.forks_count.unwrap_or(0);
         let license = info
@@ -66,7 +72,7 @@ impl Repo {
         let age = info.created_at.unwrap();
         let last_push = info.pushed_at.unwrap();
 
-        Ok(Repo {
+        Ok(Some(Repo {
             owner: owner.to_string(),
             name: name.to_string(),
             stars,
@@ -74,7 +80,7 @@ impl Repo {
             license,
             created_at: age,
             pushed_at: last_push,
-        })
+        }))
     }
 }
 
