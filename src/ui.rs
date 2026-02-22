@@ -56,17 +56,24 @@ pub struct App {
     sort_by: SortBy,
     scroll_state: ScrollbarState,
     colors: TableColors,
+    filtered: Vec<usize>,   // indices into items
+    filter: Option<String>, // None = no filter
+    filtering: bool,        // true = user is typing
 }
 
 impl App {
     pub fn new(stats: ReposStats) -> Self {
         let items = stats.repos;
+        let filtered: Vec<usize> = (0..items.len()).collect();
         Self {
             state: TableState::default().with_selected(0),
             sort_by: SortBy::Name,
             scroll_state: ScrollbarState::new((items.len() - 1) * ITEM_HEIGHT),
             colors: TableColors::new(),
             items,
+            filtered,
+            filter: None,
+            filtering: false,
         }
     }
 
@@ -112,6 +119,18 @@ impl App {
         self.scroll_state = self.scroll_state.position(i * ITEM_HEIGHT);
     }
 
+    fn apply_filter(&mut self) {
+        let query = self.filter.as_deref().unwrap_or("").to_lowercase();
+        self.filtered = self
+            .items
+            .iter()
+            .enumerate()
+            .filter(|(_, r)| r.name.to_lowercase().contains(&query))
+            .map(|(i, _)| i)
+            .collect();
+        self.state.select(Some(0));
+    }
+
     fn popularity_color(stars: u32) -> Color {
         if stars >= 10_000 {
             tailwind::LIME.c500 // very popular
@@ -142,7 +161,6 @@ impl App {
 
             if let Some(key) = event::read()?.as_key_press_event() {
                 match key.code {
-                    KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
                     KeyCode::Char('j') | KeyCode::Down => self.next_row(),
                     KeyCode::Char('k') | KeyCode::Up => self.previous_row(),
                     KeyCode::Char('o') => {
@@ -151,6 +169,32 @@ impl App {
                             let url = format!("https://github.com/{}/{}", item.owner, item.name);
                             let _ = open::that(url);
                         }
+                    }
+                    KeyCode::Char('/') => {
+                        self.filtering = true;
+                        self.filter = Some(String::new());
+                    }
+                    KeyCode::Char('q') | KeyCode::Esc => {
+                        if self.filtering {
+                            self.filtering = false;
+                            self.filter = None;
+                            self.apply_filter();
+                        } else {
+                            return Ok(());
+                        }
+                    }
+                    KeyCode::Char(c) if self.filtering => {
+                        self.filter.get_or_insert_default().push(c);
+                        self.apply_filter();
+                    }
+                    KeyCode::Backspace if self.filtering => {
+                        if let Some(f) = &mut self.filter {
+                            f.pop();
+                            self.apply_filter();
+                        }
+                    }
+                    KeyCode::Enter if self.filtering => {
+                        self.filtering = false;
                     }
 
                     KeyCode::Char('1') => {
@@ -200,7 +244,8 @@ impl App {
             .collect::<Row>()
             .style(header_style)
             .height(1);
-        let rows = self.items.iter().enumerate().map(|(i, data)| {
+        let rows = self.filtered.iter().enumerate().map(|(i, &idx)| {
+            let data = &self.items[idx];
             let color = match i % 2 {
                 0 => self.colors.normal_row_color,
                 _ => self.colors.alt_row_color,
@@ -256,7 +301,12 @@ impl App {
     }
 
     fn render_footer(&self, frame: &mut Frame, area: Rect) {
-        let info_footer = Paragraph::new(Text::from_iter(INFO_TEXT))
+        let text = if self.filtering {
+            format!("Filter: {}_", self.filter.as_deref().unwrap_or(""))
+        } else {
+            INFO_TEXT.join("\n")
+        };
+        let info_footer = Paragraph::new(Text::from(text))
             .style(Style::new().fg(self.colors.row_fg))
             .centered()
             .block(
