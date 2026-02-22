@@ -1,4 +1,3 @@
-use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Margin, Rect};
 use ratatui::style::{self, Style};
 use ratatui::text::Text;
@@ -6,8 +5,10 @@ use ratatui::widgets::{
     Block, BorderType, Cell, Clear, HighlightSpacing, Paragraph, Row, Scrollbar,
     ScrollbarOrientation, Table,
 };
+use ratatui::{DefaultTerminal, Frame};
 use style::palette::tailwind;
 
+use crate::Error;
 use crate::ui::App;
 
 const INFO_TEXT: [&str; 2] = [
@@ -148,4 +149,25 @@ impl App {
         frame.render_widget(Clear, popup); // clears background behind popup
         frame.render_widget(block, popup);
     }
+}
+
+pub fn draw_loading(
+    terminal: &mut DefaultTerminal,
+    current: usize,
+    total: usize,
+) -> Result<(), Error> {
+    terminal.draw(|f| {
+        let area = f.area();
+        let vertical = Layout::vertical([
+            Constraint::Fill(1),
+            Constraint::Length(1),
+            Constraint::Fill(1),
+        ])
+        .split(area);
+        f.render_widget(
+            Paragraph::new(format!("Fetching {}/{}...", current, total)).centered(),
+            vertical[1],
+        )
+    })?;
+    Ok(())
 }

@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use chrono_humanize::HumanTime;
-use futures::future::join_all;
 use octocrab::Octocrab;
+use tokio::sync::mpsc;
 
 use crate::Error;
 
@@ -10,15 +10,19 @@ pub struct ReposStats {
 }
 
 impl ReposStats {
-    pub async fn fetch(oct: Octocrab, repos: Vec<(&str, &str)>) -> Result<ReposStats, Error> {
-        let futures = repos.iter().map(|(owner, repo)| {
-            let oct = oct.clone();
-            async move { RepoStats::fetch(oct, owner, repo).await }
-        });
-        let results = join_all(futures).await;
-        Ok(ReposStats {
-            repos: results.into_iter().collect::<Result<Vec<_>, _>>()?,
-        })
+    pub async fn fetch(
+        oct: &Octocrab,
+        repos: Vec<(String, String)>,
+        progress: mpsc::Sender<(usize, usize)>,
+    ) -> Result<ReposStats, Error> {
+        let total = repos.len();
+        let mut results = Vec::new();
+        for (i, (owner, repo)) in repos.iter().enumerate() {
+            let stat = RepoStats::fetch(oct, owner, repo).await?;
+            results.push(stat);
+            let _ = progress.send((i + 1, total)).await;
+        }
+        Ok(ReposStats { repos: results })
     }
 }
 
@@ -46,7 +50,7 @@ impl RepoStats {
         ]
     }
 
-    pub async fn fetch(oct: Octocrab, owner: &str, name: &str) -> Result<RepoStats, Error> {
+    pub async fn fetch(oct: &Octocrab, owner: &str, name: &str) -> Result<RepoStats, Error> {
         let repo = oct.repos(owner, name);
         let info = repo.get().await.map_err(|e| match &e {
             octocrab::Error::GitHub { source, .. } if source.status_code == 403 => Error::RateLimit,
