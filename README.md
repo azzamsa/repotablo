@@ -41,10 +41,10 @@ When browsing awesome lists, I often open dozens of tabs to manually compare rep
 ## Usage
 
 ```bash
-repotablo                                 # Open $EDITOR to paste your repo list
-repotablo input.md                        # Read from a local file
-repotablo https://.../main/README.md      # Read from a remote file
-repotablo --min-stars 1000                # Exclude repos with fewer than 1000 stars
+repotablo                                  # Open $EDITOR to paste your repo list
+repotablo input.md                         # Read from a local file
+repotablo https://raw.../../README.md      # Read from a remote file
+repotablo --min-stars 1000                 # Exclude repos with fewer than 1000 stars
 ```
 
 You can use repotablo without a GitHub token, but you may encounter rate limits.
