@@ -5,28 +5,28 @@ use tokio::sync::mpsc;
 
 use crate::Error;
 
-pub struct ReposStats {
-    pub repos: Vec<RepoStats>,
+pub struct Stats {
+    pub repos: Vec<Repo>,
 }
 
-impl ReposStats {
+impl Stats {
     pub async fn fetch(
         oct: &Octocrab,
         repos: Vec<(String, String)>,
         progress: mpsc::Sender<(usize, usize)>,
-    ) -> Result<ReposStats, Error> {
+    ) -> Result<Stats, Error> {
         let total = repos.len();
         let mut results = Vec::new();
         for (i, (owner, repo)) in repos.iter().enumerate() {
-            let stat = RepoStats::fetch(oct, owner, repo).await?;
+            let stat = Repo::fetch(oct, owner, repo).await?;
             results.push(stat);
             let _ = progress.send((i + 1, total)).await;
         }
-        Ok(ReposStats { repos: results })
+        Ok(Stats { repos: results })
     }
 }
 
-pub struct RepoStats {
+pub struct Repo {
     pub owner: String,
     pub name: String,
     pub stars: u32,
@@ -38,7 +38,7 @@ pub struct RepoStats {
     pub license: String,
 }
 
-impl RepoStats {
+impl Repo {
     pub fn ref_array(&self) -> [String; 6] {
         [
             self.name.clone(),                            // Name
@@ -50,7 +50,7 @@ impl RepoStats {
         ]
     }
 
-    pub async fn fetch(oct: &Octocrab, owner: &str, name: &str) -> Result<RepoStats, Error> {
+    pub async fn fetch(oct: &Octocrab, owner: &str, name: &str) -> Result<Repo, Error> {
         let repo = oct.repos(owner, name);
         let info = repo.get().await.map_err(|e| match &e {
             octocrab::Error::GitHub { source, .. } if source.status_code == 403 => Error::RateLimit,
@@ -66,7 +66,7 @@ impl RepoStats {
         let age = info.created_at.unwrap();
         let last_push = info.pushed_at.unwrap();
 
-        Ok(RepoStats {
+        Ok(Repo {
             owner: owner.to_string(),
             name: name.to_string(),
             stars,

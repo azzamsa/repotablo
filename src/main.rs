@@ -5,7 +5,7 @@ use repotablo::{
     Error,
     cli::Opts,
     input::get_repos,
-    stats::ReposStats,
+    stats::Stats,
     ui::{App, draw::draw_loading},
 };
 
@@ -27,7 +27,7 @@ async fn run() -> Result<(), Error> {
 
         let fetch_task = tokio::spawn({
             let repos = repos.clone();
-            async move { ReposStats::fetch(&oct, repos, tx).await }
+            async move { Stats::fetch(&oct, repos, tx).await }
         });
 
         while let Some((current, total)) = rx.recv().await {

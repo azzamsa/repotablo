@@ -9,7 +9,7 @@ use ratatui::widgets::{Paragraph, ScrollbarState, TableState};
 use style::palette::tailwind;
 
 use crate::Error;
-use crate::stats::{RepoStats, ReposStats};
+use crate::stats::{Repo, Stats};
 use crate::ui::colors::AppColor;
 
 const ITEM_HEIGHT: usize = 1;
@@ -25,7 +25,7 @@ enum SortBy {
 
 pub struct App {
     state: TableState,
-    items: Vec<RepoStats>,
+    items: Vec<Repo>,
     sort_by: SortBy,
     scroll_state: ScrollbarState,
     colors: AppColor,
@@ -41,7 +41,7 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(stats: ReposStats) -> Self {
+    pub fn new(stats: Stats) -> Self {
         let items = stats.repos;
         let filtered: Vec<usize> = (0..items.len()).collect();
         Self {
