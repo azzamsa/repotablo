@@ -108,6 +108,9 @@ impl App {
     }
 
     pub fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
+        terminal
+            .draw(|f| f.render_widget(Paragraph::new("Fetching stats...").centered(), f.area()))?;
+
         loop {
             terminal.draw(|frame| self.render(frame))?;
 
