@@ -86,19 +86,23 @@ jobs:
           echo "RELEASE_VERSION=${GITHUB_REF:11}" >> "$GITHUB_ENV"
           echo "${{ env.RELEASE_VERSION }}"
 
-      - name: Install musl-tools
-        if: matrix.target == 'x86_64-unknown-linux-musl'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            --allow-unauthenticated musl-tools
-
       - uses: actions-rust-lang/setup-rust-toolchain@1780873c7b576612439a134613cc4cc74ce5538c # v1.15.2
         with:
           target: ${{ matrix.target }}
 
+      - uses: taiki-e/install-action@470679bc3a1580072dac4e67535d1aa3a3dcdf51 # v2.68.6
+        if: matrix.build == 'linux-musl'
+        with:
+          tool: cross
+
       - name: Build
-        run: cargo build --release --locked --target ${{ matrix.target }}
+        shell: bash
+        run: |
+          if [ "${{ matrix.build }}" = "linux-musl" ]; then
+            cross build --release --locked --target ${{ matrix.target }}
+          else
+            cargo build --release --locked --target ${{ matrix.target }}
+          fi
 
       - name: Build archive
         shell: bash
