@@ -11,9 +11,12 @@ repository = "https://github.com/azzamsa/repotablo"
 description = "Rank repositories, fast!"
 
 [dependencies]
-anyhow = "1.0.102"
-iocraft = "0.7.18"
-smol = "2.0.2"
+color-eyre = "0.6.5"
+crossterm = "0.29.0"
+fakeit = "1.4.1"
+itertools = "0.14.0"
+ratatui = "0.30.0"
+unicode-width = "0.2.2"
 
 [package.metadata.release]
 sign-commit = true
