@@ -17,7 +17,8 @@ _default:
 [confirm('⚠️ This command will alter your system. Run recipe `setup`?')]
 [doc('Setup the repository')]
 setup:
-    cargo binstall 'cargo-edit cargo-outdated dprint git-cliff bacon typos-cli'
+    cp -n .scripts/pre-commit .git/hooks/
+    cargo binstall cargo-edit cargo-outdated dprint git-cliff bacon typos-cli
 
 [doc('Tasks to make the code-base comply with the rules. Mostly used in git hooks')]
 comply: _doc-check fmt lint test
