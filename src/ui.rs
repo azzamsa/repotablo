@@ -12,7 +12,7 @@ use style::palette::tailwind;
 
 use crate::stats::{RepoStats, ReposStats};
 
-const INFO_TEXT: &str = "Sort by: (1) name | (2) stars | (3) forks | (4) created | (5) updated";
+const INFO_TEXT: &str = "Sort by: (1) Name | (2) Stars | (3) Forks | (4) Age | (5) Updated";
 
 const ITEM_HEIGHT: usize = 1;
 
@@ -70,7 +70,7 @@ impl App {
             SortBy::Name => self.items.sort_by(|a, b| a.name.cmp(&b.name)),
             SortBy::Stars => self.items.sort_by(|a, b| b.stars.cmp(&a.stars)),
             SortBy::Forks => self.items.sort_by(|a, b| b.forks.cmp(&a.forks)),
-            SortBy::Created => self.items.sort_by(|a, b| b.created_at.cmp(&a.created_at)), // oldest first
+            SortBy::Created => self.items.sort_by(|a, b| a.created_at.cmp(&b.created_at)), // oldest first
             SortBy::Updated => self.items.sort_by(|a, b| b.pushed_at.cmp(&a.pushed_at)), // most recent first
         }
         self.state.select(Some(0));
