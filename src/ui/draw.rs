@@ -13,7 +13,7 @@ use crate::ui::App;
 
 const INFO_TEXT: [&str; 2] = [
     "Sort by: (1) Name | (2) Stars | (3) Forks | (4) Age | (5) Updated",
-    "(o) Open | (y) Copy | (?) Help",
+    "(o) Open | (y) Copy | (e) Export | (d) Detail | (?) Help",
 ];
 
 impl App {
@@ -27,6 +27,10 @@ impl App {
 
         if self.show_help {
             self.render_help(frame);
+        }
+
+        if self.show_detail {
+            self.render_detail(frame);
         }
     }
 
@@ -132,6 +136,7 @@ impl App {
             "  /      Filter repos",
             "  o      Open in browser",
             "  e      Export to markdown",
+            "  d      Show detail",
             "  y      Yank URL to clipboard",
             "  j/↓    Move down",
             "  k/↑    Move up",
@@ -148,6 +153,47 @@ impl App {
         );
 
         frame.render_widget(Clear, popup); // clears background behind popup
+        frame.render_widget(block, popup);
+    }
+
+    pub fn render_detail(&self, frame: &mut Frame) {
+        // The selection must be active
+        // No need to check for None
+        let i = self.state.selected().unwrap();
+        let &idx = self.filtered.get(i).unwrap();
+
+        let repo = &self.items[idx];
+        let area = frame.area();
+        let popup = Rect {
+            x: area.width / 4,
+            y: area.height / 4,
+            width: area.width / 2,
+            height: area.height / 2,
+        };
+
+        let description = repo.description.as_deref().unwrap_or("No description");
+        let homepage = repo.homepage.as_deref().unwrap_or("None");
+        let topics = if repo.topics.is_empty() {
+            "None".to_string()
+        } else {
+            repo.topics.join(", ")
+        };
+
+        let text = format!(
+            "  Description: {}\n\n  Homepage: {}\n\n  Topics: {}",
+            description, homepage, topics
+        );
+
+        let block = Paragraph::new(text)
+            .wrap(ratatui::widgets::Wrap { trim: false })
+            .block(
+                Block::bordered()
+                    .title(format!(" {} ", repo.name))
+                    .border_type(BorderType::Rounded)
+                    .border_style(Style::new().fg(tailwind::VIOLET.c400)),
+            );
+
+        frame.render_widget(Clear, popup);
         frame.render_widget(block, popup);
     }
 }

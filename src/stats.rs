@@ -40,6 +40,9 @@ pub struct Repo {
     /// Last Update
     pub pushed_at: DateTime<Utc>,
     pub license: String,
+    pub description: Option<String>,
+    pub topics: Vec<String>,
+    pub homepage: Option<String>,
 }
 
 impl Repo {
@@ -74,6 +77,9 @@ impl Repo {
             .unwrap_or_else(|| "None".to_string());
         let age = info.created_at.unwrap();
         let last_push = info.pushed_at.unwrap();
+        let description = info.description;
+        let topics = info.topics.unwrap_or_default();
+        let homepage = info.homepage;
 
         Ok(Some(Repo {
             owner: owner.to_string(),
@@ -83,6 +89,9 @@ impl Repo {
             license,
             created_at: age,
             pushed_at: last_push,
+            description,
+            topics,
+            homepage,
         }))
     }
 

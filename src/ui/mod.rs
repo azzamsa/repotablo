@@ -33,11 +33,11 @@ pub struct App {
     filtered: Vec<usize>,   // indices into items
     filter: Option<String>, // None = no filter
     filtering: bool,        // true = user is typing
-    // clipboard
-    // Otherwise "clipboard was dropped very quickly"
+    // Put the `clipboard` on global staste
+    // otherwise "clipboard was dropped very quickly"
     clipboard: Option<arboard::Clipboard>,
-    // help
     show_help: bool,
+    show_detail: bool,
 }
 
 impl App {
@@ -55,6 +55,7 @@ impl App {
             filtering: false,
             clipboard: arboard::Clipboard::new().ok(),
             show_help: false,
+            show_detail: false,
         }
     }
 

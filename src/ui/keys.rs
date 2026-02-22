@@ -25,6 +25,9 @@ impl App {
                 KeyCode::Char('e') => {
                     self.export_markdown();
                 }
+                KeyCode::Char('d') => {
+                    self.show_detail = !self.show_detail;
+                }
                 KeyCode::Char('/') => {
                     self.filtering = true;
                     self.filter = Some(String::new());
