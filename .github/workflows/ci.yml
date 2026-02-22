@@ -44,9 +44,6 @@ jobs:
         with:
           tool: just
 
-      - name: Prepare the environment variables
-        run: cp .sample.env .env
-
       - name: Show version information
         shell: bash
         run: |
@@ -64,6 +61,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # https://github.com/actions/runner-images
         include:
           - {
               build: linux-gnu,
@@ -101,6 +99,13 @@ jobs:
         run: |
           rustc --version
           cargo --version
+
+      - name: Install musl-tools
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            --allow-unauthenticated musl-tools
 
       - name: Build
         run: cargo build --release --locked --target ${{ matrix.target }}
