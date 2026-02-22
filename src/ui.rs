@@ -15,7 +15,7 @@ use crate::stats::{RepoStats, ReposStats};
 
 const INFO_TEXT: [&str; 2] = [
     "Sort by: (1) Name | (2) Stars | (3) Forks | (4) Age | (5) Updated",
-    "(O) Open | (Esc) quit | (↑/j) move up | (↓/k) move down",
+    "(O) Open | (Y) Copy | (Esc) quit | (↑/j) move up | (↓/k) move down",
 ];
 
 const ITEM_HEIGHT: usize = 1;
@@ -56,9 +56,13 @@ pub struct App {
     sort_by: SortBy,
     scroll_state: ScrollbarState,
     colors: TableColors,
+    // filter
     filtered: Vec<usize>,   // indices into items
     filter: Option<String>, // None = no filter
     filtering: bool,        // true = user is typing
+    // clipboard
+    // Otherwise "clipboard was dropped very quickly"
+    clipboard: Option<arboard::Clipboard>,
 }
 
 impl App {
@@ -74,6 +78,7 @@ impl App {
             filtered,
             filter: None,
             filtering: false,
+            clipboard: arboard::Clipboard::new().ok(),
         }
     }
 
@@ -152,6 +157,11 @@ impl App {
         }
     }
 
+    fn repo_url(&self, i: usize) -> String {
+        let item = &self.items[i];
+        format!("https://github.com/{}/{}", item.owner, item.name)
+    }
+
     pub fn run(mut self, terminal: &mut DefaultTerminal) -> Result<(), Error> {
         terminal
             .draw(|f| f.render_widget(Paragraph::new("Fetching stats...").centered(), f.area()))?;
@@ -165,9 +175,15 @@ impl App {
                     KeyCode::Char('k') | KeyCode::Up => self.previous_row(),
                     KeyCode::Char('o') => {
                         if let Some(i) = self.state.selected() {
-                            let item = &self.items[i];
-                            let url = format!("https://github.com/{}/{}", item.owner, item.name);
-                            let _ = open::that(url);
+                            let _ = open::that(self.repo_url(i));
+                        }
+                    }
+                    KeyCode::Char('y') => {
+                        if let Some(i) = self.state.selected() {
+                            let url = self.repo_url(i);
+                            if let Some(clipboard) = &mut self.clipboard {
+                                let _ = clipboard.set_text(url);
+                            }
                         }
                     }
                     KeyCode::Char('/') => {

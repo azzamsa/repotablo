@@ -11,6 +11,9 @@ repository = "https://github.com/azzamsa/repotablo"
 description = "Rank repositories, fast!"
 
 [dependencies]
+# cli
+clap = { version = "4.5.60", features = ["suggestions", "color", "cargo", "derive", "env"] }
+
 # tui
 crossterm = "0.29.0"
 ratatui = "0.30.0"
@@ -27,14 +30,18 @@ regex = "1"
 reqwest = { version = "0.12.28", features = ["rustls-tls"] }
 tempfile = "3"
 
-# misc
+# async
+futures = "0.3"
+tokio = { version = "1", features = ["full"] }
+
+# time
 chrono = "0.4.43"
 chrono-humanize = "0.2.3"
-clap = { version = "4.5.60", features = ["suggestions", "color", "cargo", "derive", "env"] }
-futures = "0.3"
+
+# misc
+arboard = "3"
 open = "5"
 serde = { version = "1.0.228", features = ["derive"] }
-tokio = { version = "1", features = ["full"] }
 
 [package.metadata.release]
 sign-commit = true
