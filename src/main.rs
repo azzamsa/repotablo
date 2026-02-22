@@ -1,22 +1,31 @@
-use color_eyre::Result;
-
+use clap::Parser;
+use octocrab::Octocrab;
 use ratatui::widgets::Paragraph;
-use repotablo::{input::open_editor, stats::ReposStats, ui::App};
 
-async fn run() -> Result<()> {
-    let repos = open_editor()?;
+use repotablo::{Error, cli::Opts, input::get_repos, stats::ReposStats, ui::App};
+
+async fn run() -> Result<(), Error> {
+    let opts = Opts::parse();
+
+    let oct = if let Some(token) = opts.github_token {
+        Octocrab::builder().personal_token(token).build()?
+    } else {
+        Octocrab::default()
+    };
+
+    let repos = get_repos(opts.input).await?;
     let repos: Vec<(&str, &str)> = repos
         .iter()
         .map(|(o, r)| (o.as_str(), r.as_str()))
         .collect();
 
-    // Init ratatui AFTER editor closes, otherwise they fight for terminal control.
+    // Init ratatui after editor closes, otherwise they fight for terminal control.
     let mut terminal = ratatui::init();
 
     let result = async {
         terminal
             .draw(|f| f.render_widget(Paragraph::new("Fetching stats...").centered(), f.area()))?;
-        let stats = ReposStats::fetch(repos).await?;
+        let stats = ReposStats::fetch(oct, repos).await?;
         App::new(stats).run(&mut terminal)?;
         Ok(())
     }
@@ -27,9 +36,7 @@ async fn run() -> Result<()> {
 }
 
 #[tokio::main]
-async fn main() -> Result<()> {
-    color_eyre::install()?;
+async fn main() -> miette::Result<()> {
     run().await?;
-
     Ok(())
 }

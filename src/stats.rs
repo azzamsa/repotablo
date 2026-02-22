@@ -3,14 +3,14 @@ use chrono_humanize::HumanTime;
 use futures::future::join_all;
 use octocrab::Octocrab;
 
+use crate::Error;
+
 pub struct ReposStats {
     pub repos: Vec<RepoStats>,
 }
 
 impl ReposStats {
-    pub async fn fetch(repos: Vec<(&str, &str)>) -> Result<ReposStats, crate::Error> {
-        let oct = Octocrab::default();
-
+    pub async fn fetch(oct: Octocrab, repos: Vec<(&str, &str)>) -> Result<ReposStats, Error> {
         let futures = repos.iter().map(|(owner, repo)| {
             let oct = oct.clone();
             async move { RepoStats::fetch(oct, owner, repo).await }
@@ -45,9 +45,12 @@ impl RepoStats {
         ]
     }
 
-    pub async fn fetch(oct: Octocrab, owner: &str, name: &str) -> Result<RepoStats, crate::Error> {
+    pub async fn fetch(oct: Octocrab, owner: &str, name: &str) -> Result<RepoStats, Error> {
         let repo = oct.repos(owner, name);
-        let info = repo.get().await.unwrap();
+        let info = repo.get().await.map_err(|e| match &e {
+            octocrab::Error::GitHub { source, .. } if source.status_code == 403 => Error::RateLimit,
+            _ => Error::GitHub(e),
+        })?;
         let stars = info.stargazers_count.unwrap_or(0);
         let forks = info.forks_count.unwrap_or(0);
         let license = info

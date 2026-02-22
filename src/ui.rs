@@ -1,4 +1,3 @@
-use color_eyre::Result;
 use crossterm::event::{self, KeyCode};
 use ratatui::layout::{Constraint, Layout, Margin, Rect};
 use ratatui::style::{self, Color, Style};
@@ -10,6 +9,7 @@ use ratatui::widgets::{
 use ratatui::{DefaultTerminal, Frame};
 use style::palette::tailwind;
 
+use crate::Error;
 use crate::stats::{RepoStats, ReposStats};
 
 const INFO_TEXT: &str = "Sort by: (1) Name | (2) Stars | (3) Forks | (4) Age | (5) Updated";
@@ -107,7 +107,7 @@ impl App {
         self.scroll_state = self.scroll_state.position(i * ITEM_HEIGHT);
     }
 
-    pub fn run(mut self, terminal: &mut DefaultTerminal) -> Result<()> {
+    pub fn run(mut self, terminal: &mut DefaultTerminal) -> Result<(), Error> {
         terminal
             .draw(|f| f.render_widget(Paragraph::new("Fetching stats...").centered(), f.area()))?;
 

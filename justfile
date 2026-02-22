@@ -28,12 +28,12 @@ check: _doc-check fmt-check lint test
 [doc('Develop the app')]
 dev:
     bacon
-    just comply
+    just fmt
 
 [doc('Run the app')]
 run:
     cargo run
-    
+
 [doc('Build the app')]
 build:
     cargo build --release
